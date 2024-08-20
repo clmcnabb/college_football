@@ -1,3 +1,10 @@
 # Dev Environment
 .venv
 .vscode
+.env
+
+# MacOS
+.DS_Store
+
+# Data Files
+data/*
