@@ -10,12 +10,6 @@ PROJECT_ROOT = Path(__file__).parent.parent
 
 load_dotenv()
 API_KEY = os.getenv("CFDB_API_KEY")
-# base_url = "https://api.collegefootballdata.com/"
-# year = 2022
-# interest = "games/teams"
-# url = f"{base_url}/{interest}"
-# headers = {"accept": "application/json", "Authorization": f"Bearer {api_key}"}
-# params = {"year": year, "seasonType": "regular", "conference": "ACC"}
 
 
 def _convert_to_time(time_str) -> datetime.time:
@@ -42,14 +36,6 @@ def _pull_data(url, params, headers) -> requests.Response:
         print("Oops: Something Else", err)
 
     return r
-    # data = r.json()
-    # return data
-    # # df = pd.json_normalize(data)
-    # df = pd.json_normalize(data, record_path=['teams', 'stats'], meta=['id'])
-
-    # # Pivot the 'stats' column to create new columns
-    # # df = df.join(df.pop('stats').apply(pd.Series))
-    # return df
 
 
 def pull_game_data(year, season_type):
