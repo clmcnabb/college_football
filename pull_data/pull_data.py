@@ -102,10 +102,62 @@ def pull_calendar_data(year):
     df.to_csv(save_path, index=False)
 
 
+def pull_drive_data(year, season_type, week):
+    url = "https://api.collegefootballdata.com/drives"
+    params = {"year": year, "seasonType": season_type, "week": week}
+    headers = {"accept": "application/json", "Authorization": f"Bearer {API_KEY}"}
+    response = _pull_data(url, params, headers)
+    data = response.json()
+    df = pd.json_normalize(data)
+
+    save_path = f"{PROJECT_ROOT}/data/drives_week{week}_{year}.csv"
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    df.to_csv(save_path, index=False)
+
+
+def pull_team_season_stats(year):
+    url = "https://api.collegefootballdata.com/stats/season"
+    params = {"year": year}
+    headers = {"accept": "application/json", "Authorization": f"Bearer {API_KEY}"}
+    response = _pull_data(url, params, headers)
+    data = response.json()
+    df = pd.json_normalize(data)
+
+    save_path = f"{PROJECT_ROOT}/data/team_stats_{year}.csv"
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    df.to_csv(save_path, index=False)
+
+
+def pull_team_recruiting_rankings(year):
+    url = "https://api.collegefootballdata.com/recruiting/teams"
+    params = {"year": year}
+    headers = {"accept": "application/json", "Authorization": f"Bearer {API_KEY}"}
+    response = _pull_data(url, params, headers)
+    data = response.json()
+    df = pd.json_normalize(data)
+
+    save_path = f"{PROJECT_ROOT}/data/recruiting_{year}.csv"
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    df.to_csv(save_path, index=False)
+
+
 if __name__ == "__main__":
+    # for year in range(2010, 2023):
+    #     season_type = "regular"
+    #     for week in range(1, 16):
+    #         pull_team_data(year, season_type, week)
+    #         pull_drive_data(year, season_type, week)
+
+    #     pull_game_data(year, season_type)
+    #     pull_calendar_data(year)
+    #     pull_team_season_stats(year)
     year = 2023
     season_type = "regular"
-    for week in range(1, 16):
-        pull_team_data(year, season_type, week)
+    # for week in range(1, 16):
+    #     pull_team_data(year, season_type, week)
+    #     pull_drive_data(year, season_type, week)
+
     pull_game_data(year, season_type)
     pull_calendar_data(year)
+    pull_team_season_stats(year)
+    pull_team_recruiting_rankings(year)
