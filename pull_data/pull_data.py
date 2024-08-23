@@ -35,7 +35,15 @@ def _pull_data(url, params, headers) -> requests.Response:
     except requests.exceptions.RequestException as err:
         print("Oops: Something Else", err)
 
-    return r
+    if r:
+        return r
+    else:
+        return None
+
+
+def _dump_to_csv(df, save_path):
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    df.to_csv(save_path, index=False)
 
 
 def pull_game_data(year, season_type):
@@ -47,8 +55,7 @@ def pull_game_data(year, season_type):
     df = pd.json_normalize(data)
 
     save_path = f"{PROJECT_ROOT}/data/games_{year}.csv"
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    df.to_csv(save_path, index=False)
+    _dump_to_csv(df, save_path)
 
 
 def pull_team_data(year, season_type, week):
@@ -85,8 +92,7 @@ def pull_team_data(year, season_type, week):
     df = pd.DataFrame(processed_games)
 
     save_path = f"{PROJECT_ROOT}/data/games_week{week}_{year}.csv"
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    df.to_csv(save_path, index=False)
+    _dump_to_csv(df, save_path)
 
 
 def pull_calendar_data(year):
@@ -98,8 +104,7 @@ def pull_calendar_data(year):
     df = pd.json_normalize(data)
 
     save_path = f"{PROJECT_ROOT}/data/calendar_{year}.csv"
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    df.to_csv(save_path, index=False)
+    _dump_to_csv(df, save_path)
 
 
 def pull_drive_data(year, season_type, week):
@@ -111,8 +116,7 @@ def pull_drive_data(year, season_type, week):
     df = pd.json_normalize(data)
 
     save_path = f"{PROJECT_ROOT}/data/drives_week{week}_{year}.csv"
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    df.to_csv(save_path, index=False)
+    _dump_to_csv(df, save_path)
 
 
 def pull_team_season_stats(year):
@@ -124,8 +128,7 @@ def pull_team_season_stats(year):
     df = pd.json_normalize(data)
 
     save_path = f"{PROJECT_ROOT}/data/team_stats_{year}.csv"
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    df.to_csv(save_path, index=False)
+    _dump_to_csv(df, save_path)
 
 
 def pull_team_recruiting_rankings(year):
@@ -137,8 +140,21 @@ def pull_team_recruiting_rankings(year):
     df = pd.json_normalize(data)
 
     save_path = f"{PROJECT_ROOT}/data/recruiting_{year}.csv"
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    df.to_csv(save_path, index=False)
+    _dump_to_csv(df, save_path)
+
+
+def pull_team_ranking_data(year, season_type):
+    url = "https://api.collegefootballdata.com/rankings"
+    params = {"year": year, "seasonType": season_type}
+    headers = {"accept": "application/json", "Authorization": f"Bearer {API_KEY}"}
+    response = _pull_data(url, params, headers)
+    data = response.json()
+    df = pd.json_normalize(
+        data, record_path=["polls", "ranks"], meta=["season", "seasonType", "week"]
+    )
+
+    save_path = f"{PROJECT_ROOT}/data/rankings_{year}.csv"
+    _dump_to_csv(df, save_path)
 
 
 if __name__ == "__main__":
@@ -161,3 +177,4 @@ if __name__ == "__main__":
     pull_calendar_data(year)
     pull_team_season_stats(year)
     pull_team_recruiting_rankings(year)
+    pull_team_ranking_data(year, season_type)
