@@ -1,10 +1,10 @@
 import os
 from datetime import datetime, time
+from pathlib import Path
 
 import pandas as pd
 import requests
 from dotenv import load_dotenv
-from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent.parent
 
@@ -45,7 +45,7 @@ def pull_game_data(year, season_type):
     response = _pull_data(url, params, headers)
     data = response.json()
     df = pd.json_normalize(data)
-    # df = _pull_data(url, params, headers)
+
     save_path = f"{PROJECT_ROOT}/data/games_{year}.csv"
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     df.to_csv(save_path, index=False)
@@ -57,7 +57,6 @@ def pull_team_data(year, season_type, week):
     headers = {"accept": "application/json", "Authorization": f"Bearer {API_KEY}"}
     response = _pull_data(url, params, headers)
     data = response.json()
-
     processed_games = []
 
     for game in data:
@@ -90,9 +89,23 @@ def pull_team_data(year, season_type, week):
     df.to_csv(save_path, index=False)
 
 
+def pull_calendar_data(year):
+    url = "https://api.collegefootballdata.com/calendar"
+    params = {"year": year}
+    headers = {"accept": "application/json", "Authorization": f"Bearer {API_KEY}"}
+    response = _pull_data(url, params, headers)
+    data = response.json()
+    df = pd.json_normalize(data)
+
+    save_path = f"{PROJECT_ROOT}/data/calendar_{year}.csv"
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    df.to_csv(save_path, index=False)
+
+
 if __name__ == "__main__":
     year = 2023
     season_type = "regular"
-    week = 1
+    for week in range(1, 16):
+        pull_team_data(year, season_type, week)
     pull_game_data(year, season_type)
-    pull_team_data(year, season_type, week)
+    pull_calendar_data(year)
