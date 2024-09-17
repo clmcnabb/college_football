@@ -8,3 +8,11 @@
 
 # Data Files
 data/*
+
+# Test Files
+tests/__pycache__
+tests/__pycache__/*
+
+# Pycache
+__pycache__
+__pycache__/*

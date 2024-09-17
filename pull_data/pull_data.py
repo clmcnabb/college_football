@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, time
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 import requests
@@ -248,7 +248,7 @@ def pull_team_game_stats(
 
 def pull_calendar_data(year: int) -> None:
     """
-    Retrieves calendar data from the College Football Data API for a given year and season type.
+    Retrieves calendar data from the College Football Data API for a given year.
 
     Args:
         year (int): The year of the season.
@@ -260,23 +260,23 @@ def pull_calendar_data(year: int) -> None:
         Exception: If there is an error processing the data.
     """
     url = "https://api.collegefootballdata.com/calendar"
-    params = {"year": year}
-    headers = {"accept": "application/json", "Authorization": f"Bearer {API_KEY}"}
+    params: Dict[str, int] = {"year": year}
+    headers: Dict[str, str] = {"accept": "application/json", "Authorization": f"Bearer {API_KEY}"}
 
-    response = _pull_data(url, params, headers)  # type: requests.Response
+    response: Optional[requests.Response] = _pull_data(url, params, headers)
     if response is None:
         print(f"Failed to retrieve calendar data for year {year}")
         return
 
-    data = response.json()  # type: List[Dict[str, Any]]
+    data: List[Dict[str, Any]] = response.json()
     if not data:
         print(f"No calendar data available for year {year}")
         return
 
     try:
-        df = pd.json_normalize(data)  # type: pd.DataFrame
+        df: pd.DataFrame = pd.json_normalize(data)
 
-        save_path = f"{PROJECT_ROOT}/data/calendar_{year}.csv"
+        save_path: str = f"{PROJECT_ROOT}/data/calendar_{year}.csv"
         _dump_to_csv(df, save_path)
         _dump_to_google_cloud(df, f"calendar/calendar_{year}.csv")
         print(f"Successfully processed calendar data for year {year}")
@@ -533,27 +533,69 @@ def pull_team_talent_rankings(year: int) -> None:
         print(f"Error processing talent data for year {year}: {str(e)}")
 
 
+
+def pull_yearly_data(year: int, season_type: str) -> None:
+    """
+    Pulls all yearly data for a given year and season type.
+
+    Args:
+        year (int): The year to pull data for.
+        season_type (str): The type of season (e.g., "regular", "postseason").
+
+    Returns:
+        None
+    """
+    print(f"Pulling yearly data for {year}, season type: {season_type}")
+
+    # Pull yearly game data
+    pull_yearly_game_data(year, season_type)
+
+    # Pull calendar data
+    pull_calendar_data(year)
+
+    # Pull team season stats
+    pull_team_season_stats(year)
+
+    # Pull team recruiting score
+    pull_team_recruiting_score(year)
+
+    # Pull team ranking data
+    pull_team_ranking_data(year, season_type)
+
+    # Pull team talent rankings
+    pull_team_talent_rankings(year)
+
+    print(f"Completed pulling yearly data for {year}, season type: {season_type}")
+
+def pull_weekly_data(year: int, season_type: str, week: int) -> None:
+    """
+    Pulls all weekly data for a given year, season type, and week.
+
+    Args:
+        year (int): The year to pull data for.
+        season_type (str): The type of season (e.g., "regular", "postseason").
+        week (int): The week number to pull data for.
+
+    Returns:
+        None
+    """
+    print(f"Pulling weekly data for year {year}, season type: {season_type}, week: {week}")
+
+    # Pull team game stats
+    pull_team_game_stats(year, season_type, week)
+
+    # Pull weekly drive data
+    pull_weekly_drive_data(year, season_type, week)
+
+    # Pull weekly play data
+    pull_weekly_play_data(year, season_type, week)
+
+    print(f"Completed pulling weekly data for year {year}, season type: {season_type}, week: {week}")
+
 if __name__ == "__main__":
     for year in range(2015, 2025):
         season_type = "regular"
         for week in range(1, 16):
-            pull_team_game_stats(year, season_type, week)
-            pull_weekly_drive_data(year, season_type, week)
-            pull_weekly_play_data(year, season_type, week)
+            pull_weekly_data(year, season_type, week)
+        pull_yearly_data(year, season_type)
 
-        pull_yearly_game_data(year, season_type)
-        pull_calendar_data(year)
-        pull_team_season_stats(year)
-        pull_team_recruiting_score(year)
-        pull_team_ranking_data(year, season_type)
-    # year = 2023
-    # season_type = "regular"
-    # for week in range(1, 16):
-    #     pull_team_data(year, season_type, week)
-    #     pull_drive_data(year, season_type, week)
-    # # pull_play_data(year, season_type, 1)
-    # pull_yearly_game_data(year, season_type)
-    # pull_calendar_data(year)
-    # pull_team_season_stats(year)
-    # pull_team_recruiting_rankings(year)
-    # pull_team_ranking_data(year, season_type)
