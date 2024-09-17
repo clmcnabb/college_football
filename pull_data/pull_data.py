@@ -1,11 +1,12 @@
 import os
 from datetime import datetime, time
 from pathlib import Path
-from google.cloud import storage
+from typing import Any, Dict, Optional
 
 import pandas as pd
 import requests
 from dotenv import load_dotenv
+from google.cloud import storage
 
 PROJECT_ROOT = Path(__file__).parent.parent
 
@@ -15,12 +16,12 @@ KEY_FILE_PATH = os.getenv("PATH_TO_SERVICE_ACCOUNT_KEY")
 LANDING_BUCKET = os.getenv("LANDING_BUCKET")
 
 
-def _convert_to_time(time_str) -> datetime.time:
+def _convert_to_time(time_str: str) -> datetime.time:
     """
     Converts a string in the format 'mm:ss' to a datetime.time object.
 
     Args:
-        time_str (str): The time string to be converted.
+        time_str (str): The time string to be converted, in the format 'mm:ss'.
 
     Returns:
         datetime.time: The converted time.
@@ -29,7 +30,11 @@ def _convert_to_time(time_str) -> datetime.time:
     return time(minute=minutes, second=seconds)
 
 
-def _pull_data(url, params, headers) -> requests.Response:
+def _pull_data(
+    url: str,  # The URL to retrieve data from.
+    params: Dict[str, Any],  # The URL parameters to send with the request.
+    headers: Dict[str, str],  # The headers to send with the request.
+) -> Optional[requests.Response]:
     """
     Attempts to retrieve data from the given URL with the given parameters and headers.
 
@@ -42,28 +47,19 @@ def _pull_data(url, params, headers) -> requests.Response:
         requests.Response: The response object, if the request was successful. None otherwise.
     """
     try:
-        r = requests.get(
-            url,
-            params=params,
-            headers=headers,
-            timeout=10,
-        )
+        r = requests.get(url, params=params, headers=headers, timeout=10)
         r.raise_for_status()
         return r
-    except requests.exceptions.HTTPError as errh:
-        print("Http Error:", errh)
-    except requests.exceptions.ConnectionError as errc:
-        print("Error Connecting:", errc)
-    except requests.exceptions.Timeout as errt:
-        print("Timeout Error:", errt)
     except requests.exceptions.RequestException as err:
-        print("Oops: Something Else", err)
+        print(f"Error retrieving data from {url}: {err}")
 
-    print(f"Failed to retrieve data from {url}")
     return None
 
 
-def _dump_to_csv(df, save_path):
+def _dump_to_csv(
+    df: pd.DataFrame,  # The DataFrame to be dumped.
+    save_path: str,  # The path to the file to be written.
+) -> None:
     """
     Dumps a pandas DataFrame as a CSV file to the given path.
 
@@ -86,7 +82,10 @@ def _dump_to_csv(df, save_path):
         print(f"Error details: {str(e)}")
 
 
-def _dump_to_google_cloud(df, object_path):
+def _dump_to_google_cloud(
+    df: pd.DataFrame,  # The DataFrame to be uploaded.
+    object_path: str,  # The path to the object in the Google Cloud Storage bucket.
+) -> None:
     """
     Uploads a pandas DataFrame as a CSV file to Google Cloud Storage.
 
@@ -120,7 +119,10 @@ def _dump_to_google_cloud(df, object_path):
         print(f"Failed to upload file: {object_path}")
 
 
-def pull_yearly_game_data(year, season_type):
+def pull_yearly_game_data(
+    year: int,  # The year of the season.
+    season_type: str,  # The type of season (e.g. "regular", "postseason").
+) -> None:
     """
     Retrieves yearly game data from the College Football Data API for a given year and season type.
 
@@ -167,7 +169,11 @@ def pull_yearly_game_data(year, season_type):
         )
 
 
-def pull_team_game_stats(year, season_type, week):
+def pull_team_game_stats(
+    year: int,  # The year of the season.
+    season_type: str,  # The type of season (e.g. "regular", "postseason").
+    week: int,  # The week of the season.
+) -> None:
     """
     Retrieves team game stats from the College Football Data API for a given year,
     season type, and week.
@@ -240,7 +246,7 @@ def pull_team_game_stats(year, season_type, week):
         )
 
 
-def pull_calendar_data(year):
+def pull_calendar_data(year: int) -> None:
     """
     Retrieves calendar data from the College Football Data API for a given year and season type.
 
@@ -257,18 +263,18 @@ def pull_calendar_data(year):
     params = {"year": year}
     headers = {"accept": "application/json", "Authorization": f"Bearer {API_KEY}"}
 
-    response = _pull_data(url, params, headers)
+    response = _pull_data(url, params, headers)  # type: requests.Response
     if response is None:
         print(f"Failed to retrieve calendar data for year {year}")
         return
 
-    data = response.json()
+    data = response.json()  # type: List[Dict[str, Any]]
     if not data:
         print(f"No calendar data available for year {year}")
         return
 
     try:
-        df = pd.json_normalize(data)
+        df = pd.json_normalize(data)  # type: pd.DataFrame
 
         save_path = f"{PROJECT_ROOT}/data/calendar_{year}.csv"
         _dump_to_csv(df, save_path)
@@ -278,7 +284,11 @@ def pull_calendar_data(year):
         print(f"Error processing calendar data for year {year}: {str(e)}")
 
 
-def pull_weekly_drive_data(year, season_type, week):
+def pull_weekly_drive_data(
+    year: int,  # The year of the season.
+    season_type: str,  # The type of season (e.g. "regular", "postseason").
+    week: int,  # The week of the season.
+) -> None:
     """
     Retrieves drive data from the College Football Data API for a given year, season type, and week.
 
@@ -318,7 +328,11 @@ def pull_weekly_drive_data(year, season_type, week):
         print(f"Error processing drive data for week {week}, year {year}: {str(e)}")
 
 
-def pull_weekly_play_data(year, season_type, week):
+def pull_weekly_play_data(
+    year: int,  # The year of the season.
+    season_type: str,  # The type of season (e.g. "regular", "postseason").
+    week: int,  # The week of the season.
+) -> None:
     """
     Retrieves play data from the College Football Data API for a given year, season type, and week.
 
@@ -358,7 +372,7 @@ def pull_weekly_play_data(year, season_type, week):
         print(f"Error processing play data for week {week}, year {year}: {str(e)}")
 
 
-def pull_team_season_stats(year):
+def pull_team_season_stats(year: int) -> None:
     """
     Retrieves team season stats from the College Football Data API for a given year.
 
@@ -396,7 +410,7 @@ def pull_team_season_stats(year):
         print(f"Error processing team season stats for year {year}: {str(e)}")
 
 
-def pull_team_recruiting_score(year):
+def pull_team_recruiting_score(year: int) -> None:
     """
     Retrieves recruiting data from the College Football Data API for a given year.
 
@@ -413,18 +427,18 @@ def pull_team_recruiting_score(year):
     params = {"year": year}
     headers = {"accept": "application/json", "Authorization": f"Bearer {API_KEY}"}
 
-    response = _pull_data(url, params, headers)
+    response = _pull_data(url, params, headers)  # type: requests.Response
     if response is None:
         print(f"Failed to retrieve recruiting data for year {year}")
         return
 
-    data = response.json()
+    data = response.json()  # type: List[Dict[str, Any]]
     if not data:
         print(f"No recruiting data available for year {year}")
         return
 
     try:
-        df = pd.json_normalize(data)
+        df = pd.json_normalize(data)  # type: pd.DataFrame
 
         save_path = f"{PROJECT_ROOT}/data/recruiting_{year}.csv"
         _dump_to_csv(df, save_path)
@@ -434,7 +448,7 @@ def pull_team_recruiting_score(year):
         print(f"Error processing recruiting data for year {year}: {str(e)}")
 
 
-def pull_team_ranking_data(year, season_type):
+def pull_team_ranking_data(year: int, season_type: str) -> None:
     """
     Retrieves team ranking data from the College Football Data API for a given year and season type.
 
@@ -452,14 +466,14 @@ def pull_team_ranking_data(year, season_type):
     params = {"year": year, "seasonType": season_type}
     headers = {"accept": "application/json", "Authorization": f"Bearer {API_KEY}"}
 
-    response = _pull_data(url, params, headers)
+    response = _pull_data(url, params, headers)  # type: requests.Response
     if response is None:
         print(
             f"Failed to retrieve ranking data for year {year}, season type {season_type}"
         )
         return
 
-    data = response.json()
+    data = response.json()  # type: List[Dict[str, Any]]
     if not data:
         print(f"No ranking data available for year {year}, season type {season_type}")
         return
@@ -467,7 +481,7 @@ def pull_team_ranking_data(year, season_type):
     try:
         df = pd.json_normalize(
             data, record_path=["polls", "ranks"], meta=["season", "seasonType", "week"]
-        )
+        )  # type: pd.DataFrame
 
         save_path = f"{PROJECT_ROOT}/data/rankings_{year}.csv"
         _dump_to_csv(df, save_path)
@@ -481,7 +495,7 @@ def pull_team_ranking_data(year, season_type):
         )
 
 
-def pull_team_talent_rankings(year):
+def pull_team_talent_rankings(year: int) -> None:
     """
     Retrieves team talent rankings from the College Football Data API for a given year.
 
