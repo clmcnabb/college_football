@@ -159,7 +159,7 @@ def pull_yearly_game_data(
 
         save_path = f"{PROJECT_ROOT}/data/games_{year}.csv"
         _dump_to_csv(df, save_path)
-        _dump_to_google_cloud(df, f"games/games_{year}.csv")
+        _dump_to_google_cloud(df, f"games_yearly/games_{year}.csv")
         print(
             f"Successfully processed yearly game data for year {year}, season type {season_type}"
         )
@@ -593,9 +593,11 @@ def pull_weekly_data(year: int, season_type: str, week: int) -> None:
     print(f"Completed pulling weekly data for year {year}, season type: {season_type}, week: {week}")
 
 if __name__ == "__main__":
-    for year in range(2015, 2025):
-        season_type = "regular"
-        for week in range(1, 16):
-            pull_weekly_data(year, season_type, week)
-        pull_yearly_data(year, season_type)
+    # for year in range(2015, 2025):
+    #     season_type = "regular"
+    #     for week in range(1, 16):
+    #         pull_weekly_data(year, season_type, week)
+    #     pull_yearly_data(year, season_type)
+
+    pull_yearly_data(2023, "regular")
 
