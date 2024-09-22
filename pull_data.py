@@ -122,6 +122,8 @@ def _dump_to_google_cloud(
 def pull_yearly_game_data(
     year: int,  # The year of the season.
     season_type: str,  # The type of season (e.g. "regular", "postseason").
+    local: bool = False, # Whether to save data locally to a CSV file.
+    gcp: bool = True, # Whether to save data to Google Cloud Storage.
 ) -> None:
     """
     Retrieves yearly game data from the College Football Data API for a given year and season type.
@@ -158,8 +160,10 @@ def pull_yearly_game_data(
         df = pd.json_normalize(data)
 
         save_path = f"{PROJECT_ROOT}/data/games_{year}.csv"
-        _dump_to_csv(df, save_path)
-        _dump_to_google_cloud(df, f"games_yearly/games_{year}.csv")
+        if local:
+            _dump_to_csv(df, save_path)
+        if gcp:
+            _dump_to_google_cloud(df, f"games_yearly/games_{year}.csv")
         print(
             f"Successfully processed yearly game data for year {year}, season type {season_type}"
         )
@@ -599,5 +603,6 @@ if __name__ == "__main__":
     #         pull_weekly_data(year, season_type, week)
     #     pull_yearly_data(year, season_type)
 
-    pull_yearly_data(2023, "regular")
+    # pull_yearly_data(2023, "regular")
+    pull_weekly_data(2023, "regular", 1)
 
